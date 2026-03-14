@@ -101,9 +101,21 @@ O projeto é idealizado pela FATEC de São José dos Campos e alunos, tendo como
 
 ## 📋 Backlog do Produto <a id="backlog"></a>
 
-| Rank | Título                                             | Prioridade | User Stories                                                                                                                                                                                                                  | Estimativa | Sprint |
-| :--: | :------------------------------------------------- | :--------: | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------: | :----: |
-|  1   | Titulo                                    |    ALTA    | US                        |     8      |   1    |
+| Rank | Título | Prioridade | User Stories | Estimativa | Sprint |
+|-----|------|-----------|--------------|-----------|--------|
+| 1 | Gestão de normas | ALTA | Como administrador, quero gerenciar normas no sistema para melhor organização. | 7 | 1 |
+| 2 | Visualização de normas | ALTA | Como engenheiro, quero visualizar listas de normas para melhor interpretação. | 4 | 1 |
+| 3 | Filtragem de normas por Órgão | ALTA | Como engenheiro, quero filtrar normas por órgão responsável, para encontrar rapidamente as informações relevantes. | 8 | 2 |
+| 4 | Filtragem de normas por Código | ALTA | Como engenheiro, quero filtrar normas pelo código da mesma para encontrar rapidamente as informações relevantes. | 7 | 2 |
+| 5 | Filtragem de normas por Categoria | ALTA | Como engenheiro, quero filtrar normas por categoria, para organizar e localizar facilmente as informações. | 7 | 2 |
+| 6 | Filtragem de normas por Palavra-chave | ALTA | Como engenheiro, quero buscar normas usando palavras-chave, para localizar conteúdos específicos de forma rápida. | 7 | 2 |
+| 7 | Filtro de Normas por Categoria Pública ou Privada | ALTA | Como engenheiro, quero filtrar normas por categoria (pública ou privada), para melhor organização. | 5 | 2 |
+| 8 | Gestão de Peças no Sistema | ALTA | Como administrador, quero gerenciar peças no sistema para melhor organização. | 8 | 2 |
+| 9 | Visualização de Peças por Normas | MÉDIA | Como engenheiro, quero visualizar peças relacionadas a uma norma. | 6 | 2 |
+| 10 | Histórico de Alterações de Normas | MÉDIA | Como administrador, quero registrar alterações feitas nas normas e quem as alterou, para melhor controle das mesmas. | 7 | 3 |
+| 11 | Visualização do Histórico de Alterações | MÉDIA | Como administrador, quero visualizar o histórico de alterações de uma norma para uma melhor gestão. | 7 | 3 |
+| 12 | Controle de Acesso por Níveis de Usuário | MÉDIA | Como administrador, desejo que o sistema possua diferentes níveis de usuário que permitam visualização e alteração de normas e notas, para um melhor controle de acesso. | 5 | 3 |
+| 13 | Gestão de Usuários | MÉDIA | Como administrador, quero gerenciar usuários para acesso e controle do sistema. | 6 | 3 |
 ---
 
 # Registro das Sprints <a id="sprints"></a>
