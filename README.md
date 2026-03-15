@@ -18,6 +18,7 @@
   <a href="#sprints"> Registro das Sprints</a> |
   <a href="#dor"> DoR</a> |
   <a href="#dod"> DoD</a> |
+  <a href="#branch">Branchs</a> |
   <a href="#time"> Time</a> |
 </p>
 
@@ -153,6 +154,20 @@ O projeto é idealizado pela FATEC de São José dos Campos e alunos, tendo como
       <li> Vídeo de entrega anexado à documentação. </li>
   </ul>
  
+---
+
+## 📂 Nomenclatura de Branches e Estratégia de Branchs <a id="branch"></a>
+
+A estrutura de ramificação do repositório segue este padrão de nomenclatura:
+
+| Categoria | Branch / Prefixo | Descrição | Exemplo |
+| :--- | :--- | :--- | :--- |
+| **Produção** | `main` | Código estável, versão final de entrega (Deploy). | `main` |
+| **Desenvolvimento** | `dev` | Branch de integração onde todas as features se encontram. | `dev` |
+| **Documentação** | `docs/` | Atualizações de arquivos Markdown, manuais e relatórios. | `docs/sp1-do-projeto` |
+| **Back-end** | `dev/back-` | Novas funcionalidades de servidor, API e Banco de Dados. | `dev/back-cadastro-usuarios` |
+| **Front-end** | `dev/front-` | Criação de telas, componentes React e interface. | `dev/front-dashboard-principal` |
+
 ---
 
 ## 📦 Manual de Instalação
