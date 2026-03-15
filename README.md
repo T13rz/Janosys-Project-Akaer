@@ -186,7 +186,7 @@ Antes de iniciar a instalação, certifique-se de que você tenha os seguintes i
 
 ```bash
 git clone https://github.com/janosystime/Janosys-Project-1-Akaer
-cd Janosys-Project
+cd Janosys-Project-1-Akaer
 ```
 
 ---
