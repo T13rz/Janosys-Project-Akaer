@@ -78,10 +78,10 @@ Um site navegável e que possibilite a gestão das normas e sua visualização.
 
 | Rank | ID | Título | Estimativa | Status |
 | :--- | :--- | :--- | :---: | :---: |
-| #1 | US01 | Gestão de normas | 7 pts | Planejado |
-| #2 | US02 | Visualização de normas | 4 pts | Planejado |
-| #4 | US04 | Filtro por Categoria (Pública/Privada) | 5 pts | Extra |
-| #7 | US03 | Filtragem de normas por Código | 7 pts | Extra |
+| 1 | US01 | Gestão de normas | 7 pts | Planejado |
+| 2 | US02 | Visualização de normas | 4 pts | Planejado |
+| 4 | US04 | Filtro por Categoria (Pública/Privada) | 5 pts | Extra |
+| 7 | US03 | Filtragem de normas por Código | 7 pts | Extra |
 
 ---
 
@@ -89,7 +89,7 @@ Um site navegável e que possibilite a gestão das normas e sua visualização.
 
 | Rank | Título            | Prioridade | User Stories                                                                                                                                                       | Estimativa | Sprint |
 | :--: | :---------------- | :--------: | :----------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------: | :---: |
-| <span style="color:green">1</span> | <span style="color:green">Gestão de normas</span> | <span style="color:green">ALTA</span> | <span style="color:green">Como administrador, quero gerenciar normas no sistema para melhor organização.</span> | <span style="color:green">7</span> | <span style="color:green">1</span> |
+| <span style="color:green">1 [Meta]</span> | <span style="color:green">Gestão de normas</span> | <span style="color:green">ALTA</span> | <span style="color:green">Como administrador, quero gerenciar normas no sistema para melhor organização.</span> | <span style="color:green">7</span> | <span style="color:green">1</span> |
 | 2 | Visualização de normas | ALTA | Como engenheiro, quero visualizar listas de normas para melhor interpretação. | 4 | 1 |
 | 4 | Filtragem de normas por Código | ALTA | Como engenheiro, quero filtrar normas pelo código da mesma para encontrar rapidamente as informações relevantes. | 7 | 2 |
 | 7 | Filtro de Normas por Categoria Pública ou Privada | ALTA | Como engenheiro, quero filtrar normas por categoria (pública ou privada), para melhor organização. | 5 | 2 |
