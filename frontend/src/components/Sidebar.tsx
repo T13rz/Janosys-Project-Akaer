@@ -108,11 +108,6 @@ export default function Sidebar(props: PropsSidebar) {
           <span className="nav-label">Normativas</span>
         </NavLink>
 
-        <NavLink to="/notas" className="nav-item" onClick={fecharMenuMobile}>
-          <FileText size={20} />
-          <span className="nav-label">Notas</span>
-        </NavLink>
-
         {isAdmin && (
           <>
             <hr className="nav-divisor" />
