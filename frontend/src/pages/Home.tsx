@@ -333,7 +333,7 @@ export default function Home() {
       <main className="page">
         <div className="page-header pecas-header">
           <h1 className="page-title">
-            <i className="fas fa-book-bookmark"></i> Catálogo de Diretórios
+            <i className="fas fa-book-bookmark"></i> Catálogo de Componentes
           </h1>
         </div>
 

@@ -9,6 +9,7 @@ interface Norma {
   organizacao: string;
   categoria: string;
   subcategoria: string;
+  item: string;
   tipo: string;
   revisao: string;
   status: string;
@@ -39,7 +40,8 @@ const NORMAS_BASE: Norma[] = [
     titulo: "Análise de Segurança de Sistemas",
     organizacao: "ANAC",
     categoria: "Instalação",
-    subcategoria: "Estrutura",
+    subcategoria: "Geral",
+    item: "Parafuso",
     tipo: "Pública",
     revisao: "Emenda 09",
     status: "Vigente",
@@ -51,8 +53,9 @@ const NORMAS_BASE: Norma[] = [
     codigo: "25.571",
     titulo: "Damage Tolerance and Fatigue Evaluation",
     organizacao: "FAA",
-    categoria: "Geral",
-    subcategoria: "Basic Notes",
+    categoria: "Conjunto",
+    subcategoria: "União de Peças",
+    item: "Soldagem",
     tipo: "Pública",
     revisao: "Amendment 27",
     status: "Vigente",
@@ -66,6 +69,7 @@ const NORMAS_BASE: Norma[] = [
     organizacao: "ISO",
     categoria: "Peça",
     subcategoria: "Metálica",
+    item: "Usinado",
     tipo: "Pública",
     revisao: "2015",
     status: "Vigente",
@@ -79,8 +83,9 @@ const NORMAS_BASE: Norma[] = [
     codigo: "CS-25",
     titulo: "Certification Specifications for Large Aeroplanes",
     organizacao: "EASA",
-    categoria: "Geral",
-    subcategoria: "Identificação",
+    categoria: "Conjunto",
+    subcategoria: "Cablagem",
+    item: "Conector",
     tipo: "Privada",
     revisao: "Amendment 27",
     status: "Vigente",
@@ -110,6 +115,32 @@ const SUBCATEGORIAS: Record<string, string[]> = {
   Geral: ["Basic Notes", "Identificação"],
 };
 
+const ITENS_POR_SUBCATEGORIA: Record<string, string[]> = {
+  Metálica: [
+    "Tubo",
+    "Usinado",
+    "Chapa",
+    "Extrudado",
+    "Fundido",
+    "Tratamento Superficial",
+    "Teste",
+  ],
+  "Instalação de Acessórios": ["Tubo com Acessório"],
+  "União de Peças": ["Soldagem"],
+  Cablagem: ["Proteção", "Bota", "Conector"],
+  Geral: [
+    "Selante",
+    "Metalização",
+    "Rebite",
+    "Parafuso",
+    "Arruela",
+    "Inserto",
+    "Frenagem",
+    "Shim",
+    "Primer",
+  ],
+};
+
 const STATUS_OPCOES = ["Vigente", "Revogada"];
 
 const ORG_ORIGENS: Record<string, string> = {
@@ -137,6 +168,7 @@ const FORM_INICIAL: Partial<Norma> = {
   organizacao: ORGANIZACOES[0],
   categoria: CATEGORIAS[0],
   subcategoria: SUBCATEGORIAS[CATEGORIAS[0]][0],
+  item: "",
   tipo: "Pública",
   revisao: "",
   status: "Vigente",
@@ -360,6 +392,14 @@ function NormaCardItem({
                 <i className="fas fa-layer-group"></i> {norma.subcategoria}
               </span>
             )}
+            {norma.item && (
+              <span
+                className="badge theme-subcategoria"
+                style={{ opacity: 0.85 }}
+              >
+                <i className="fas fa-cube"></i> {norma.item}
+              </span>
+            )}
 
             <span
               className={`badge ${norma.tipo === "Pública" ? "badge-tipo-publica" : "badge-tipo-privada"}`}
@@ -424,6 +464,7 @@ export default function Biblioteca() {
   const [termoPesquisa, setTermoPesquisa] = useState("");
   const [filtroCategoria, setFiltroCategoria] = useState("Todas");
   const [filtroSubcategoria, setFiltroSubcategoria] = useState("");
+  const [filtroItem, setFiltroItem] = useState("");
   const [filtroStatus, setFiltroStatus] = useState("Todos");
 
   const [pdfAberto, setPdfAberto] = useState<{
@@ -506,22 +547,41 @@ export default function Biblioteca() {
   const subcategoriasDisponiveis =
     filtroCategoria !== "Todas" ? (SUBCATEGORIAS[filtroCategoria] ?? []) : [];
 
+  const itensDisponiveis = Array.from(
+    new Set(
+      normas
+        .filter(
+          (normaAtual) =>
+            normaAtual.subcategoria === filtroSubcategoria && normaAtual.item,
+        )
+        .map((normaAtual) => normaAtual.item),
+    ),
+  ).sort();
+
   const filtrosAtivos =
     termoPesquisa !== "" ||
     filtroCategoria !== "Todas" ||
     filtroSubcategoria !== "" ||
+    filtroItem !== "" ||
     filtroStatus !== "Todos";
 
   const limparFiltros = () => {
     setTermoPesquisa("");
     setFiltroCategoria("Todas");
     setFiltroSubcategoria("");
+    setFiltroItem("");
     setFiltroStatus("Todos");
   };
 
   const handleMudancaCategoriaFiltro = (novaCategoria: string) => {
     setFiltroCategoria(novaCategoria);
     setFiltroSubcategoria("");
+    setFiltroItem("");
+  };
+
+  const handleMudancaSubcategoriaFiltro = (novaSubcategoria: string) => {
+    setFiltroSubcategoria(novaSubcategoria);
+    setFiltroItem("");
   };
 
   const termoMinusculo = termoPesquisa.toLowerCase();
@@ -534,9 +594,16 @@ export default function Biblioteca() {
       filtroCategoria === "Todas" || normaAtual.categoria === filtroCategoria;
     const matchSubcategoria =
       !filtroSubcategoria || normaAtual.subcategoria === filtroSubcategoria;
+    const matchItem = !filtroItem || normaAtual.item === filtroItem;
     const matchStatus =
       filtroStatus === "Todos" || normaAtual.status === filtroStatus;
-    return matchBusca && matchCategoria && matchSubcategoria && matchStatus;
+    return (
+      matchBusca &&
+      matchCategoria &&
+      matchSubcategoria &&
+      matchItem &&
+      matchStatus
+    );
   });
 
   const abrirModalCadastro = () => {
@@ -683,7 +750,7 @@ export default function Biblioteca() {
                 </span>
                 <button
                   className={`filter-badge ${filtroSubcategoria === "" ? "active theme-all" : ""}`}
-                  onClick={() => setFiltroSubcategoria("")}
+                  onClick={() => handleMudancaSubcategoriaFiltro("")}
                 >
                   <i className="fas fa-border-all"></i> Todas
                 </button>
@@ -691,13 +758,38 @@ export default function Biblioteca() {
                   <button
                     key={nomeSubcategoria}
                     className={`filter-badge theme-subcategoria ${filtroSubcategoria === nomeSubcategoria ? "active" : ""}`}
-                    onClick={() => setFiltroSubcategoria(nomeSubcategoria)}
+                    onClick={() =>
+                      handleMudancaSubcategoriaFiltro(nomeSubcategoria)
+                    }
                   >
                     <i className="fas fa-layer-group"></i> {nomeSubcategoria}
                   </button>
                 ))}
               </div>
             )}
+
+          {filtroSubcategoria !== "" && itensDisponiveis.length > 0 && (
+            <div className="filter-badges-row item-row">
+              <span className="filter-label">
+                <i className="fas fa-cube"></i> Item:
+              </span>
+              <button
+                className={`filter-badge ${filtroItem === "" ? "active theme-all" : ""}`}
+                onClick={() => setFiltroItem("")}
+              >
+                <i className="fas fa-border-all"></i> Todos
+              </button>
+              {itensDisponiveis.map((nomeItem) => (
+                <button
+                  key={nomeItem}
+                  className={`filter-badge theme-subcategoria ${filtroItem === nomeItem ? "active" : ""}`}
+                  onClick={() => setFiltroItem(nomeItem)}
+                >
+                  <i className="fas fa-cube"></i> {nomeItem}
+                </button>
+              ))}
+            </div>
+          )}
 
           <div className="filter-badges-row">
             <span className="filter-label">
@@ -914,12 +1006,13 @@ export default function Biblioteca() {
 
                           const subcategoriasDaCategoria =
                             SUBCATEGORIAS[novaCategoria] || [];
-                          updateForm(
-                            "subcategoria",
+                          const novaSubcategoria =
                             subcategoriasDaCategoria.length > 0
                               ? subcategoriasDaCategoria[0]
-                              : "",
-                          );
+                              : "";
+                          updateForm("subcategoria", novaSubcategoria);
+
+                          updateForm("item", "");
                         }}
                       >
                         {CATEGORIAS.map((nomeCategoria) => (
@@ -937,9 +1030,11 @@ export default function Biblioteca() {
                       <select
                         className="form-select"
                         value={form.subcategoria}
-                        onChange={(evento) =>
-                          updateForm("subcategoria", evento.target.value)
-                        }
+                        onChange={(evento) => {
+                          const novaSubcategoria = evento.target.value;
+                          updateForm("subcategoria", novaSubcategoria);
+                          updateForm("item", "");
+                        }}
                       >
                         {(SUBCATEGORIAS[form.categoria ?? ""] ?? []).map(
                           (nomeSub) => (
@@ -948,6 +1043,40 @@ export default function Biblioteca() {
                             </option>
                           ),
                         )}
+                      </select>
+                    </div>
+
+                    <div className="form-group">
+                      <label className="form-label">
+                        <i className="fas fa-cube"></i> Item
+                      </label>
+                      <select
+                        className="form-select"
+                        value={form.item}
+                        onChange={(evento) =>
+                          updateForm("item", evento.target.value)
+                        }
+                        disabled={
+                          !form.subcategoria ||
+                          !(
+                            ITENS_POR_SUBCATEGORIA[form.subcategoria]?.length >
+                            0
+                          )
+                        }
+                      >
+                        <option value="" disabled hidden>
+                          {form.subcategoria &&
+                          ITENS_POR_SUBCATEGORIA[form.subcategoria]?.length > 0
+                            ? "Selecione um item"
+                            : "Sem itens aplicáveis"}
+                        </option>
+                        {(
+                          ITENS_POR_SUBCATEGORIA[form.subcategoria ?? ""] ?? []
+                        ).map((nomeItem) => (
+                          <option key={nomeItem} value={nomeItem}>
+                            {nomeItem}
+                          </option>
+                        ))}
                       </select>
                     </div>
                   </div>
@@ -1352,6 +1481,14 @@ export default function Biblioteca() {
                     </span>
                     <span className="view-value">
                       {normaVisualizar.subcategoria || "—"}
+                    </span>
+                  </div>
+                  <div className="view-item">
+                    <span className="view-label">
+                      <i className="fas fa-cube"></i> Item
+                    </span>
+                    <span className="view-value">
+                      {normaVisualizar.item || "—"}
                     </span>
                   </div>
                 </div>
