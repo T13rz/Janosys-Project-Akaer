@@ -56,6 +56,8 @@ const NORMAS_BASE: Norma[] = [
     status: "Vigente",
     notas: ["Norma principal de safety."],
     referencias: ["SAE ARP4761"],
+    nomePdf: "rbac-25-1309.pdf",
+    urlPdf: "/rbac-25-1309.pdf",
   },
   {
     id: "FAR 25.571",
@@ -70,6 +72,8 @@ const NORMAS_BASE: Norma[] = [
     status: "Vigente",
     notas: [],
     referencias: [],
+    nomePdf: "far-25-571.pdf",
+    urlPdf: "/far-25-571.pdf",
   },
   {
     id: "ISO 9001:2015",
