@@ -19,6 +19,7 @@
   <a href="#dor"> DoR</a> |
   <a href="#dod"> DoD</a> |
   <a href="#branch">Branchs</a> |
+  <a href="#instalacao">Instalação</a> | 
   <a href="#time"> Time</a> |
 </p>
 
@@ -170,24 +171,53 @@ A estrutura de ramificação do repositório segue este padrão de nomenclatura:
 
 ---
 
-## 📦 Manual de Instalação
+## 📦 Manual de Instalação <a id="instalacao"></a>
 
 ### Pré-requisitos
 
-Antes de iniciar a instalação, certifique-se de que você tenha os seguintes itens instalados na sua máquina:
+  Antes de começar, certifique-se de ter instalado:
 
-- [Git](https://git-scm.com/)
+
+   Git: Para clonar o repositório. Download Git (https://git-scm.com/)
+
+   Node.js (Versão 18 ou superior): Para gerenciar pacotes e rodar o frontend. Download Node.js (https://nodejs.org/)
+
+   Gerenciador de pacotes: O Node.js já vem com o npm, mas você também pode usar o yarn ou pnpm.
+
 
 ---
 
 ### 🚀 Passo a Passo para Rodar Localmente
 
-#### 1. Clone o repositório
+1. Clonar o Repositório
 
-```bash
-git clone https://github.com/janosystime/Janosys-Project-1-Akaer
-cd Janosys-Project-1-Akaer
-```
+  Abra o terminal e execute o comando abaixo para baixar o projeto:
+
+
+    git clone https://github.com/janosystime/Janosys-Project-1-Akaer.git
+
+    cd Janosys-Project-1-Akaer
+
+2. Configurar o Frontend
+
+  O projeto utiliza React + Vite + TypeScript. Navegue até a pasta do frontend e instale as dependências:
+
+
+    # Entrar na pasta do frontend
+    cd frontend
+    
+    # Instalar dependências
+    npm install
+
+3. Executar o Projeto
+
+  Ainda na pasta frontend, inicie o servidor de desenvolvimento:
+
+     npm run dev
+
+
+  Após executar o comando, o terminal exibirá um link (geralmente http://localhost:5173). Abra-o no seu navegador.
+
 
 ---
 
