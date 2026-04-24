@@ -34,10 +34,10 @@ interface ConfirmacaoState {
   onConfirmar: () => void;
 }
 
-const converterParaBase64 = (arquivo: File): Promise<string> => {
+const converterParaBase64 = (arquivoAtual: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const leitor = new FileReader();
-    leitor.readAsDataURL(arquivo);
+    leitor.readAsDataURL(arquivoAtual);
     leitor.onload = () => resolve(leitor.result as string);
     leitor.onerror = (erro) => reject(erro);
   });
@@ -237,7 +237,7 @@ function ModalConfirmacao({
     <div className="modal-overlay confirmacao-overlay" onClick={onCancelar}>
       <div
         className="modal modal-confirmacao"
-        onClick={(evento) => evento.stopPropagation()}
+        onClick={(eventoClique) => eventoClique.stopPropagation()}
       >
         <div className="confirmacao-icone">
           <i className="fas fa-triangle-exclamation"></i>
@@ -270,7 +270,7 @@ function PdfViewer({
     <div className="pdf-viewer-overlay" onClick={onClose}>
       <div
         className="pdf-viewer-container"
-        onClick={(evento) => evento.stopPropagation()}
+        onClick={(eventoClique) => eventoClique.stopPropagation()}
       >
         <div className="pdf-viewer-header">
           <div className="pdf-viewer-title">
@@ -325,7 +325,7 @@ function ImageLightbox({
     <div className="lightbox-overlay" onClick={onClose}>
       <div
         className="lightbox-container"
-        onClick={(evento) => evento.stopPropagation()}
+        onClick={(eventoClique) => eventoClique.stopPropagation()}
       >
         <button className="lightbox-close" onClick={onClose}>
           <i className="fas fa-xmark"></i>
@@ -365,20 +365,26 @@ function ImageLightbox({
 
 function NormaCardItem({
   norma,
+  onEdit,
   onDelete,
-  onView,
+  onShowDetails,
+  onViewPdf,
+  onViewImages,
 }: {
   norma: Norma;
+  onEdit: (normaAtual: Norma) => void;
   onDelete: (id: string) => void;
-  onView: (norma: Norma) => void;
+  onShowDetails: (normaAtual: Norma) => void;
+  onViewPdf: (url: string, nome: string) => void;
+  onViewImages: (imagens: string[]) => void;
 }) {
-  const [selecionado, setSelecionado] = useState(false);
   const classeCorTema = `theme-cat-${norma.categoria.toLowerCase()}`;
+  const possuiAnexos = norma.urlPdf || (norma.imagens && norma.imagens.length > 0);
 
   return (
     <div
-      className={`norma-card ${classeCorTema} ${selecionado ? "selecionado" : ""}`}
-      onClick={() => setSelecionado(!selecionado)}
+      className={`norma-card ${classeCorTema} clicavel`}
+      onClick={() => onShowDetails(norma)}
     >
       <div className="norma-card-body">
         <div className={`norma-card-main-icon ${classeCorTema}`}>
@@ -412,9 +418,7 @@ function NormaCardItem({
               </span>
             )}
             {norma.item && (
-              <span
-                className="badge theme-subcategoria badge-secundario"
-              >
+              <span className="badge theme-subcategoria badge-secundario">
                 <i className="fas fa-cube"></i> {norma.item}
               </span>
             )}
@@ -434,7 +438,7 @@ function NormaCardItem({
               )}{" "}
               {norma.status}
             </span>
-            {(norma.nomePdf || (norma.imagens && norma.imagens.length > 0)) && (
+            {possuiAnexos && (
               <span className="badge theme-subcategoria">
                 <i className="fas fa-paperclip"></i> Anexos
               </span>
@@ -443,20 +447,48 @@ function NormaCardItem({
         </div>
       </div>
       <div className="norma-card-actions">
+        {/* Botão independente para PDF */}
+        {norma.urlPdf && (
+          <button
+            className="btn btn-info btn-icon"
+            onClick={(eventoClique) => {
+              eventoClique.stopPropagation();
+              onViewPdf(norma.urlPdf!, norma.nomePdf || "documento.pdf");
+            }}
+            title="Visualizar PDF"
+          >
+            <i className="fas fa-file-pdf"></i>
+          </button>
+        )}
+        
+        {/* Botão independente para Imagens */}
+        {norma.imagens && norma.imagens.length > 0 && (
+          <button
+            className="btn btn-info btn-icon"
+            onClick={(eventoClique) => {
+              eventoClique.stopPropagation();
+              onViewImages(norma.imagens!);
+            }}
+            title="Visualizar Imagens"
+          >
+            <i className="fas fa-images"></i>
+          </button>
+        )}
+
         <button
-          className="btn btn-info btn-icon"
-          onClick={(evento) => {
-            evento.stopPropagation();
-            onView(norma);
+          className="btn btn-warning btn-icon"
+          onClick={(eventoClique) => {
+            eventoClique.stopPropagation();
+            onEdit(norma);
           }}
-          title="Visualizar"
+          title="Editar"
         >
-          <i className="fas fa-eye"></i>
+          <i className="fas fa-pen"></i>
         </button>
         <button
           className="btn btn-danger btn-icon"
-          onClick={(evento) => {
-            evento.stopPropagation();
+          onClick={(eventoClique) => {
+            eventoClique.stopPropagation();
             onDelete(norma.id);
           }}
           title="Excluir"
@@ -487,6 +519,7 @@ export default function Biblioteca() {
 
   const [showModal, setShowModal] = useState(false);
   const [stepModal, setStepModal] = useState(1);
+  const [editandoId, setEditandoId] = useState<string | null>(null);
   const [normaVisualizar, setNormaVisualizar] = useState<Norma | null>(null);
   const [erroCampos, setErroCampos] = useState<
     Partial<Record<keyof Norma, string>>
@@ -502,6 +535,7 @@ export default function Biblioteca() {
     url: string;
     nome: string;
   } | null>(null);
+  const [imagensAbertas, setImagensAbertas] = useState<string[] | null>(null);
   const [imagemAbertaIdx, setImagemAbertaIdx] = useState<number | null>(null);
 
   const [toasts, setToasts] = useState<ToastMsg[]>([]);
@@ -564,14 +598,14 @@ export default function Biblioteca() {
   const [arquivoPdf, setArquivoPdf] = useState<File | null>(null);
   const [arquivosImagens, setArquivosImagens] = useState<File[]>([]);
 
-  const handlePdfChange = (evento: ChangeEvent<HTMLInputElement>) => {
-    if (evento.target.files?.[0]) setArquivoPdf(evento.target.files[0]);
+  const handlePdfChange = (eventoMudanca: ChangeEvent<HTMLInputElement>) => {
+    if (eventoMudanca.target.files?.[0]) setArquivoPdf(eventoMudanca.target.files[0]);
   };
-  const handleImgChange = (evento: ChangeEvent<HTMLInputElement>) => {
-    if (evento.target.files)
+  const handleImgChange = (eventoMudanca: ChangeEvent<HTMLInputElement>) => {
+    if (eventoMudanca.target.files)
       setArquivosImagens((imagensAnteriores) => [
         ...imagensAnteriores,
-        ...Array.from(evento.target.files!),
+        ...Array.from(eventoMudanca.target.files!),
       ]);
   };
 
@@ -634,7 +668,7 @@ export default function Biblioteca() {
     const matchItem = !filtroItem || normaAtual.item === filtroItem;
     const matchStatus =
       filtroStatus === "Todos" || normaAtual.status === filtroStatus;
-    
+
     return (
       matchBusca &&
       matchCategoria &&
@@ -645,6 +679,16 @@ export default function Biblioteca() {
   });
 
   const abrirModalCadastro = () => {
+    setEditandoId(null);
+    setForm(FORM_INICIAL);
+    setStepModal(1);
+    setErroCampos({});
+    setShowModal(true);
+  };
+
+  const abrirModalEdicao = (normaParaEditar: Norma) => {
+    setEditandoId(normaParaEditar.id);
+    setForm(normaParaEditar);
     setStepModal(1);
     setErroCampos({});
     setShowModal(true);
@@ -652,6 +696,7 @@ export default function Biblioteca() {
 
   const fecharModal = () => {
     setShowModal(false);
+    setEditandoId(null);
     setForm(FORM_INICIAL);
     setArquivoPdf(null);
     setArquivosImagens([]);
@@ -675,7 +720,8 @@ export default function Biblioteca() {
 
   const handleSave = async () => {
     try {
-      let stringBase64Pdf: string | undefined = undefined;
+      let stringBase64Pdf = form.urlPdf;
+      let nomeArquivoPdf = form.nomePdf;
 
       if (arquivoPdf) {
         if (arquivoPdf.size > 3 * 1024 * 1024) {
@@ -686,19 +732,25 @@ export default function Biblioteca() {
           return;
         }
         stringBase64Pdf = await converterParaBase64(arquivoPdf);
+        nomeArquivoPdf = arquivoPdf.name;
       }
-      const stringsBase64Imagens = await Promise.all(
-        arquivosImagens.map(async (arquivoImagem) => {
-          if (arquivoImagem.size > 2 * 1024 * 1024) {
-            throw new Error(
-              `Imagem ${arquivoImagem.name} excede o limite de 2MB.`,
-            );
-          }
-          return await converterParaBase64(arquivoImagem);
-        }),
-      );
+      
+      let stringsBase64Imagens = form.imagens || [];
+      if (arquivosImagens.length > 0) {
+        const novasImagensBase64 = await Promise.all(
+          arquivosImagens.map(async (arquivoImagemAtual) => {
+            if (arquivoImagemAtual.size > 2 * 1024 * 1024) {
+              throw new Error(
+                `Imagem ${arquivoImagemAtual.name} excede o limite de 2MB.`,
+              );
+            }
+            return await converterParaBase64(arquivoImagemAtual);
+          }),
+        );
+        stringsBase64Imagens = [...stringsBase64Imagens, ...novasImagensBase64];
+      }
 
-      const novaNorma = {
+      const normaSalva = {
         ...form,
         notas: form.notas?.filter((notaAtual) => notaAtual.trim() !== "") || [],
         referencias:
@@ -709,17 +761,30 @@ export default function Biblioteca() {
           form.palavrasChave?.filter(
             (palavraAtual) => palavraAtual.trim() !== "",
           ) || [],
-        nomePdf: arquivoPdf ? arquivoPdf.name : undefined,
+        nomePdf: nomeArquivoPdf,
         urlPdf: stringBase64Pdf,
         imagens: stringsBase64Imagens,
       } as Norma;
 
-      setNormas([novaNorma, ...normas]);
+      if (editandoId) {
+        setNormas((normasAnteriores) =>
+          normasAnteriores.map((normaAnalisada) =>
+            normaAnalisada.id === editandoId ? normaSalva : normaAnalisada
+          )
+        );
+        adicionarToast(
+          "sucesso",
+          `Norma "${normaSalva.id}" atualizada com sucesso!`,
+        );
+      } else {
+        setNormas([normaSalva, ...normas]);
+        adicionarToast(
+          "sucesso",
+          `Norma "${normaSalva.id}" registada com sucesso!`,
+        );
+      }
       fecharModal();
-      adicionarToast(
-        "sucesso",
-        `Norma "${novaNorma.id}" registada com sucesso!`,
-      );
+      
     } catch (erro: unknown) {
       console.error(erro);
       if (erro instanceof Error && erro.name === "QuotaExceededError") {
@@ -777,7 +842,7 @@ export default function Biblioteca() {
                 className="form-input search-input"
                 placeholder="Pesquisar por ID, Código, Título ou Palavra-chave..."
                 value={termoPesquisa}
-                onChange={(evento) => setTermoPesquisa(evento.target.value)}
+                onChange={(eventoMudanca) => setTermoPesquisa(eventoMudanca.target.value)}
               />
               {termoPesquisa && (
                 <button
@@ -810,16 +875,16 @@ export default function Biblioteca() {
             >
               <i className="fas fa-border-all"></i> Todas
             </button>
-            {CATEGORIAS.map((nomeCategoria) => (
+            {CATEGORIAS.map((nomeCategoriaAtual) => (
               <button
-                key={nomeCategoria}
-                className={`filter-badge theme-cat-${nomeCategoria.toLowerCase()} ${filtroCategoria === nomeCategoria ? "active" : ""}`}
-                onClick={() => handleMudancaCategoriaFiltro(nomeCategoria)}
+                key={nomeCategoriaAtual}
+                className={`filter-badge theme-cat-${nomeCategoriaAtual.toLowerCase()} ${filtroCategoria === nomeCategoriaAtual ? "active" : ""}`}
+                onClick={() => handleMudancaCategoriaFiltro(nomeCategoriaAtual)}
               >
                 <i
-                  className={`fas ${CAT_ICONES[nomeCategoria] || "fa-tag"}`}
+                  className={`fas ${CAT_ICONES[nomeCategoriaAtual] || "fa-tag"}`}
                 ></i>{" "}
-                {nomeCategoria}
+                {nomeCategoriaAtual}
               </button>
             ))}
           </div>
@@ -836,15 +901,15 @@ export default function Biblioteca() {
                 >
                   <i className="fas fa-border-all"></i> Todas
                 </button>
-                {subcategoriasDisponiveis.map((nomeSubcategoria) => (
+                {subcategoriasDisponiveis.map((nomeSubcategoriaAtual) => (
                   <button
-                    key={nomeSubcategoria}
-                    className={`filter-badge theme-subcategoria ${filtroSubcategoria === nomeSubcategoria ? "active" : ""}`}
+                    key={nomeSubcategoriaAtual}
+                    className={`filter-badge theme-subcategoria ${filtroSubcategoria === nomeSubcategoriaAtual ? "active" : ""}`}
                     onClick={() =>
-                      handleMudancaSubcategoriaFiltro(nomeSubcategoria)
+                      handleMudancaSubcategoriaFiltro(nomeSubcategoriaAtual)
                     }
                   >
-                    <i className="fas fa-layer-group"></i> {nomeSubcategoria}
+                    <i className="fas fa-layer-group"></i> {nomeSubcategoriaAtual}
                   </button>
                 ))}
               </div>
@@ -861,13 +926,13 @@ export default function Biblioteca() {
               >
                 <i className="fas fa-border-all"></i> Todos
               </button>
-              {itensDisponiveis.map((nomeItem) => (
+              {itensDisponiveis.map((nomeItemAtual) => (
                 <button
-                  key={nomeItem}
-                  className={`filter-badge theme-subcategoria ${filtroItem === nomeItem ? "active" : ""}`}
-                  onClick={() => setFiltroItem(nomeItem)}
+                  key={nomeItemAtual}
+                  className={`filter-badge theme-subcategoria ${filtroItem === nomeItemAtual ? "active" : ""}`}
+                  onClick={() => setFiltroItem(nomeItemAtual)}
                 >
-                  <i className="fas fa-cube"></i> {nomeItem}
+                  <i className="fas fa-cube"></i> {nomeItemAtual}
                 </button>
               ))}
             </div>
@@ -883,18 +948,18 @@ export default function Biblioteca() {
             >
               <i className="fas fa-border-all"></i> Todos
             </button>
-            {STATUS_OPCOES.map((nomeStatus) => (
+            {STATUS_OPCOES.map((nomeStatusAtual) => (
               <button
-                key={nomeStatus}
-                className={`filter-badge filter-badge-status-${nomeStatus.toLowerCase()} ${filtroStatus === nomeStatus ? "active" : ""}`}
-                onClick={() => setFiltroStatus(nomeStatus)}
+                key={nomeStatusAtual}
+                className={`filter-badge filter-badge-status-${nomeStatusAtual.toLowerCase()} ${filtroStatus === nomeStatusAtual ? "active" : ""}`}
+                onClick={() => setFiltroStatus(nomeStatusAtual)}
               >
-                {nomeStatus === "Vigente" ? (
+                {nomeStatusAtual === "Vigente" ? (
                   <i className="fas fa-check-circle"></i>
                 ) : (
                   <i className="fas fa-times-circle"></i>
                 )}{" "}
-                {nomeStatus}
+                {nomeStatusAtual}
               </button>
             ))}
           </div>
@@ -906,13 +971,19 @@ export default function Biblioteca() {
             : `${normasFiltradas.length} de ${normas.length} norma${normas.length !== 1 ? "s" : ""}`}
         </p>
 
-        <div className="normas-lista">
-          {normasFiltradas.map((normaAtual, indiceNorma) => (
+      <div className="normas-lista">
+          {normasFiltradas.map((normaMapeada, indiceMapeado) => (
             <NormaCardItem
-              key={indiceNorma}
-              norma={normaAtual}
+              key={indiceMapeado}
+              norma={normaMapeada}
+              onEdit={abrirModalEdicao}
               onDelete={handleDelete}
-              onView={setNormaVisualizar}
+              onShowDetails={setNormaVisualizar}
+              onViewPdf={(url, nome) => setPdfAberto({ url, nome })}
+              onViewImages={(imagens) => {
+                setImagensAbertas(imagens);
+                setImagemAbertaIdx(0);
+              }}
             />
           ))}
           {normasFiltradas.length === 0 && (
@@ -932,12 +1003,12 @@ export default function Biblioteca() {
           <div className="modal-overlay" onClick={fecharModal}>
             <div
               className="modal modal-large"
-              onClick={(evento) => evento.stopPropagation()}
+              onClick={(eventoClique) => eventoClique.stopPropagation()}
             >
               <div className="modal-header">
                 <h2>
-                  <i className="fas fa-file-circle-plus"></i> Registar Nova
-                  Norma
+                  <i className="fas fa-file-circle-plus"></i>{" "}
+                  {editandoId ? "Editar Norma" : "Registar Nova Norma"}
                 </h2>
                 <button
                   type="button"
@@ -971,8 +1042,8 @@ export default function Biblioteca() {
               </div>
 
               <form
-                onSubmit={(evento) => {
-                  evento.preventDefault();
+                onSubmit={(eventoSubmissao) => {
+                  eventoSubmissao.preventDefault();
                   if (stepModal < 3) {
                     handleProximoPasso();
                   } else {
@@ -992,8 +1063,9 @@ export default function Biblioteca() {
                       <input
                         className="form-input"
                         value={form.id}
-                        onChange={(evento) =>
-                          updateForm("id", evento.target.value)
+                        disabled={!!editandoId} // Não permitir mudar ID na edição
+                        onChange={(eventoMudanca) =>
+                          updateForm("id", eventoMudanca.target.value)
                         }
                         placeholder="Ex: RBAC 25.1309"
                       />
@@ -1012,8 +1084,8 @@ export default function Biblioteca() {
                       <input
                         className="form-input"
                         value={form.codigo}
-                        onChange={(evento) =>
-                          updateForm("codigo", evento.target.value)
+                        onChange={(eventoMudanca) =>
+                          updateForm("codigo", eventoMudanca.target.value)
                         }
                         placeholder="Ex: 25.1309"
                       />
@@ -1029,8 +1101,8 @@ export default function Biblioteca() {
                       <input
                         className="form-input"
                         value={form.titulo}
-                        onChange={(evento) =>
-                          updateForm("titulo", evento.target.value)
+                        onChange={(eventoMudanca) =>
+                          updateForm("titulo", eventoMudanca.target.value)
                         }
                         placeholder="Nome completo"
                       />
@@ -1049,13 +1121,13 @@ export default function Biblioteca() {
                       <select
                         className="form-select"
                         value={form.organizacao}
-                        onChange={(evento) =>
-                          updateForm("organizacao", evento.target.value)
+                        onChange={(eventoMudanca) =>
+                          updateForm("organizacao", eventoMudanca.target.value)
                         }
                       >
-                        {ORGANIZACOES.map((nomeOrganizacao) => (
-                          <option key={nomeOrganizacao} value={nomeOrganizacao}>
-                            {ORG_ORIGENS[nomeOrganizacao]} {nomeOrganizacao}
+                        {ORGANIZACOES.map((nomeOrganizacaoAtual) => (
+                          <option key={nomeOrganizacaoAtual} value={nomeOrganizacaoAtual}>
+                            {ORG_ORIGENS[nomeOrganizacaoAtual]} {nomeOrganizacaoAtual}
                           </option>
                         ))}
                       </select>
@@ -1068,8 +1140,8 @@ export default function Biblioteca() {
                       <input
                         className="form-input"
                         value={form.revisao}
-                        onChange={(evento) =>
-                          updateForm("revisao", evento.target.value)
+                        onChange={(eventoMudanca) =>
+                          updateForm("revisao", eventoMudanca.target.value)
                         }
                         placeholder="Ex: Rev. A"
                       />
@@ -1082,8 +1154,8 @@ export default function Biblioteca() {
                       <select
                         className="form-select"
                         value={form.categoria}
-                        onChange={(evento) => {
-                          const novaCategoria = evento.target.value;
+                        onChange={(eventoMudanca) => {
+                          const novaCategoria = eventoMudanca.target.value;
                           updateForm("categoria", novaCategoria);
 
                           const subcategoriasDaCategoria =
@@ -1097,9 +1169,9 @@ export default function Biblioteca() {
                           updateForm("item", "");
                         }}
                       >
-                        {CATEGORIAS.map((nomeCategoria) => (
-                          <option key={nomeCategoria} value={nomeCategoria}>
-                            {nomeCategoria}
+                        {CATEGORIAS.map((nomeCategoriaAtual) => (
+                          <option key={nomeCategoriaAtual} value={nomeCategoriaAtual}>
+                            {nomeCategoriaAtual}
                           </option>
                         ))}
                       </select>
@@ -1112,16 +1184,16 @@ export default function Biblioteca() {
                       <select
                         className="form-select"
                         value={form.subcategoria}
-                        onChange={(evento) => {
-                          const novaSubcategoria = evento.target.value;
+                        onChange={(eventoMudanca) => {
+                          const novaSubcategoria = eventoMudanca.target.value;
                           updateForm("subcategoria", novaSubcategoria);
                           updateForm("item", "");
                         }}
                       >
                         {(SUBCATEGORIAS[form.categoria ?? ""] ?? []).map(
-                          (nomeSub) => (
-                            <option key={nomeSub} value={nomeSub}>
-                              {nomeSub}
+                          (nomeSubcategoriaAtual) => (
+                            <option key={nomeSubcategoriaAtual} value={nomeSubcategoriaAtual}>
+                              {nomeSubcategoriaAtual}
                             </option>
                           ),
                         )}
@@ -1135,8 +1207,8 @@ export default function Biblioteca() {
                       <select
                         className="form-select"
                         value={form.item}
-                        onChange={(evento) =>
-                          updateForm("item", evento.target.value)
+                        onChange={(eventoMudanca) =>
+                          updateForm("item", eventoMudanca.target.value)
                         }
                         disabled={
                           !form.subcategoria ||
@@ -1154,9 +1226,9 @@ export default function Biblioteca() {
                         </option>
                         {(
                           ITENS_POR_SUBCATEGORIA[form.subcategoria ?? ""] ?? []
-                        ).map((nomeItem) => (
-                          <option key={nomeItem} value={nomeItem}>
-                            {nomeItem}
+                        ).map((nomeItemAtual) => (
+                          <option key={nomeItemAtual} value={nomeItemAtual}>
+                            {nomeItemAtual}
                           </option>
                         ))}
                       </select>
@@ -1174,8 +1246,8 @@ export default function Biblioteca() {
                         <select
                           className="form-select"
                           value={form.status}
-                          onChange={(evento) =>
-                            updateForm("status", evento.target.value)
+                          onChange={(eventoMudanca) =>
+                            updateForm("status", eventoMudanca.target.value)
                           }
                         >
                           <option value="Vigente">Vigente</option>
@@ -1189,8 +1261,8 @@ export default function Biblioteca() {
                         <select
                           className="form-select"
                           value={form.tipo}
-                          onChange={(evento) =>
-                            updateForm("tipo", evento.target.value)
+                          onChange={(eventoMudanca) =>
+                            updateForm("tipo", eventoMudanca.target.value)
                           }
                         >
                           <option value="Pública">Pública</option>
@@ -1207,17 +1279,17 @@ export default function Biblioteca() {
                       </label>
                       <div className="dynamic-list">
                         {form.palavrasChave?.map(
-                          (palavraAtual, indicePalavra) => (
-                            <div key={indicePalavra} className="dynamic-row">
+                          (palavraAtual, indicePalavraAtual) => (
+                            <div key={indicePalavraAtual} className="dynamic-row">
                               <input
                                 className="form-input"
                                 value={palavraAtual}
-                                onChange={(evento) => {
+                                onChange={(eventoMudanca) => {
                                   const novasPalavras = [
                                     ...form.palavrasChave!,
                                   ];
-                                  novasPalavras[indicePalavra] =
-                                    evento.target.value;
+                                  novasPalavras[indicePalavraAtual] =
+                                    eventoMudanca.target.value;
                                   updateForm("palavrasChave", novasPalavras);
                                 }}
                                 placeholder="Palavra-chave..."
@@ -1229,8 +1301,8 @@ export default function Biblioteca() {
                                   updateForm(
                                     "palavrasChave",
                                     form.palavrasChave!.filter(
-                                      (_, indiceAtual) =>
-                                        indiceAtual !== indicePalavra,
+                                      (_, indiceAtualCopia) =>
+                                        indiceAtualCopia !== indicePalavraAtual,
                                     ),
                                   )
                                 }
@@ -1260,14 +1332,14 @@ export default function Biblioteca() {
                         <i className="fas fa-pen-to-square"></i> Notas Técnicas
                       </label>
                       <div className="dynamic-list">
-                        {form.notas?.map((notaAtual, indiceNota) => (
-                          <div key={indiceNota} className="dynamic-row">
+                        {form.notas?.map((notaAtual, indiceNotaAtual) => (
+                          <div key={indiceNotaAtual} className="dynamic-row">
                             <input
                               className="form-input"
                               value={notaAtual}
-                              onChange={(evento) => {
+                              onChange={(eventoMudanca) => {
                                 const novasNotas = [...form.notas!];
-                                novasNotas[indiceNota] = evento.target.value;
+                                novasNotas[indiceNotaAtual] = eventoMudanca.target.value;
                                 updateForm("notas", novasNotas);
                               }}
                               placeholder="Nota..."
@@ -1279,8 +1351,8 @@ export default function Biblioteca() {
                                 updateForm(
                                   "notas",
                                   form.notas!.filter(
-                                    (_, indiceAtual) =>
-                                      indiceAtual !== indiceNota,
+                                    (_, indiceAtualCopia) =>
+                                      indiceAtualCopia !== indiceNotaAtual,
                                   ),
                                 )
                               }
@@ -1307,17 +1379,17 @@ export default function Biblioteca() {
                       </label>
                       <div className="dynamic-list">
                         {form.referencias?.map(
-                          (referenciaAtual, indiceReferencia) => (
-                            <div key={indiceReferencia} className="dynamic-row">
+                          (referenciaAtual, indiceReferenciaAtual) => (
+                            <div key={indiceReferenciaAtual} className="dynamic-row">
                               <input
                                 className="form-input"
                                 value={referenciaAtual}
-                                onChange={(evento) => {
+                                onChange={(eventoMudanca) => {
                                   const novasReferencias = [
                                     ...form.referencias!,
                                   ];
-                                  novasReferencias[indiceReferencia] =
-                                    evento.target.value;
+                                  novasReferencias[indiceReferenciaAtual] =
+                                    eventoMudanca.target.value;
                                   updateForm("referencias", novasReferencias);
                                 }}
                                 placeholder="Referência..."
@@ -1329,8 +1401,8 @@ export default function Biblioteca() {
                                   updateForm(
                                     "referencias",
                                     form.referencias!.filter(
-                                      (_, indiceAtual) =>
-                                        indiceAtual !== indiceReferencia,
+                                      (_, indiceAtualCopia) =>
+                                        indiceAtualCopia !== indiceReferenciaAtual,
                                     ),
                                   )
                                 }
@@ -1363,41 +1435,51 @@ export default function Biblioteca() {
                       <label className="form-label">
                         <i className="fas fa-file-pdf"></i> Arquivo PDF
                       </label>
-                      <label
-                        className={`file-upload-zone ${arquivoPdf ? "has-file" : ""}`}
-                      >
-                        <div className="file-icon">
-                          <i
-                            className={`fas ${arquivoPdf ? "fa-check" : "fa-upload"}`}
-                          ></i>
+                      {form.urlPdf && !arquivoPdf ? (
+                        <div className="attachment-pdf" style={{ marginBottom: 0 }}>
+                           <i className="fas fa-file-pdf"></i>
+                           <span className="attachment-pdf-name">{form.nomePdf}</span>
+                           <button type="button" className="btn-remove-file" onClick={() => { updateForm('urlPdf', undefined); updateForm('nomePdf', undefined); }}>
+                             <i className="fas fa-trash"></i>
+                           </button>
                         </div>
-                        <div className="file-info">
-                          <span className="file-name">
-                            {arquivoPdf
-                              ? arquivoPdf.name
-                              : "Anexar arquivo PDF"}
-                          </span>
-                          <span className="file-hint">Máximo 3MB (.pdf)</span>
-                        </div>
-                        {arquivoPdf && (
-                          <button
-                            type="button"
-                            className="btn-remove-file"
-                            onClick={(evento) => {
-                              evento.preventDefault();
-                              setArquivoPdf(null);
-                            }}
-                          >
-                            <i className="fas fa-trash"></i>
-                          </button>
-                        )}
-                        <input
-                          type="file"
-                          accept="application/pdf"
-                          className="hidden-input"
-                          onChange={handlePdfChange}
-                        />
-                      </label>
+                      ) : (
+                        <label
+                          className={`file-upload-zone ${arquivoPdf ? "has-file" : ""}`}
+                        >
+                          <div className="file-icon">
+                            <i
+                              className={`fas ${arquivoPdf ? "fa-check" : "fa-upload"}`}
+                            ></i>
+                          </div>
+                          <div className="file-info">
+                            <span className="file-name">
+                              {arquivoPdf
+                                ? arquivoPdf.name
+                                : "Anexar arquivo PDF"}
+                            </span>
+                            <span className="file-hint">Máximo 3MB (.pdf)</span>
+                          </div>
+                          {arquivoPdf && (
+                            <button
+                              type="button"
+                              className="btn-remove-file"
+                              onClick={(eventoClique) => {
+                                eventoClique.preventDefault();
+                                setArquivoPdf(null);
+                              }}
+                            >
+                              <i className="fas fa-trash"></i>
+                            </button>
+                          )}
+                          <input
+                            type="file"
+                            accept="application/pdf"
+                            className="hidden-input"
+                            onChange={handlePdfChange}
+                          />
+                        </label>
+                      )}
                     </div>
 
                     <div className="file-upload-group">
@@ -1409,7 +1491,7 @@ export default function Biblioteca() {
                           <i className="fas fa-image"></i>
                         </div>
                         <div className="file-info">
-                          <span className="file-name">Anexar imagens</span>
+                          <span className="file-name">Adicionar imagens</span>
                           <span className="file-hint">JPG, PNG, WebP</span>
                         </div>
                         <input
@@ -1420,16 +1502,36 @@ export default function Biblioteca() {
                           onChange={handleImgChange}
                         />
                       </label>
+                      
+                      {/* Mostrar Imagens Existentes na Edição */}
+                      {form.imagens && form.imagens.length > 0 && (
+                        <div className="image-preview-list">
+                          {form.imagens.map((urlImagemExistente, indiceImagemExistente) => (
+                             <div key={`existente-${indiceImagemExistente}`} className="image-preview-item">
+                               <img src={urlImagemExistente} alt="Preview" />
+                               <button type="button" className="btn-remove-preview" onClick={() => {
+                                  const novasImagensFormulario = [...form.imagens!];
+                                  novasImagensFormulario.splice(indiceImagemExistente, 1);
+                                  updateForm('imagens', novasImagensFormulario);
+                               }}>
+                                 <i className="fas fa-xmark"></i>
+                               </button>
+                             </div>
+                           ))}
+                        </div>
+                      )}
+
+                      {/* Mostrar Imagens Novas */}
                       {arquivosImagens.length > 0 && (
                         <div className="image-preview-list">
                           {arquivosImagens.map(
-                            (arquivoImagem, indiceImagem) => (
+                            (arquivoImagemNovo, indiceImagemNovo) => (
                               <div
-                                key={indiceImagem}
+                                key={`nova-${indiceImagemNovo}`}
                                 className="image-preview-item"
                               >
                                 <img
-                                  src={URL.createObjectURL(arquivoImagem)}
+                                  src={URL.createObjectURL(arquivoImagemNovo)}
                                   alt="Preview"
                                 />
                                 <button
@@ -1438,8 +1540,8 @@ export default function Biblioteca() {
                                   onClick={() =>
                                     setArquivosImagens((imagensAnteriores) =>
                                       imagensAnteriores.filter(
-                                        (_, indiceAtual) =>
-                                          indiceAtual !== indiceImagem,
+                                        (_, indiceAtualParaFiltro) =>
+                                          indiceAtualParaFiltro !== indiceImagemNovo,
                                       ),
                                     )
                                   }
@@ -1501,20 +1603,37 @@ export default function Biblioteca() {
           >
             <div
               className="modal modal-large"
-              onClick={(evento) => evento.stopPropagation()}
+              onClick={(eventoClique) => eventoClique.stopPropagation()}
             >
               <div className="modal-header">
                 <h2>
                   <i className="fas fa-magnifying-glass-chart"></i> Detalhes da
                   Norma
                 </h2>
-                <button
-                  type="button"
-                  className="btn-close"
-                  onClick={() => setNormaVisualizar(null)}
-                >
-                  <i className="fas fa-xmark"></i>
-                </button>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                    <button 
+                      className="btn btn-warning btn-icon" 
+                      onClick={() => { setNormaVisualizar(null); abrirModalEdicao(normaVisualizar); }}
+                      title="Editar Norma"
+                    >
+                      <i className="fas fa-pen"></i>
+                    </button>
+                    <button 
+                      className="btn btn-danger btn-icon" 
+                      onClick={() => { setNormaVisualizar(null); handleDelete(normaVisualizar.id); }}
+                      title="Excluir Norma"
+                    >
+                      <i className="fas fa-trash"></i>
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-close"
+                      onClick={() => setNormaVisualizar(null)}
+                      title="Fechar"
+                    >
+                      <i className="fas fa-xmark"></i>
+                    </button>
+                </div>
               </div>
               <div className="view-details">
                 <div className="view-grid">
@@ -1637,9 +1756,9 @@ export default function Biblioteca() {
                       <i className="fas fa-key"></i> Palavras-chave
                     </span>
                     <div className="view-badges">
-                      {normaVisualizar.palavrasChave.map((palavraAtual, indicePalavra) => (
-                        <span key={indicePalavra} className="badge theme-subcategoria">
-                          {palavraAtual}
+                      {normaVisualizar.palavrasChave.map((palavraMapeada, indicePalavraMapeada) => (
+                        <span key={indicePalavraMapeada} className="badge theme-subcategoria">
+                          {palavraMapeada}
                         </span>
                       ))}
                     </div>
@@ -1652,10 +1771,10 @@ export default function Biblioteca() {
                       <i className="fas fa-pen-to-square"></i> Notas Técnicas
                     </span>
                     <ul className="view-list">
-                      {normaVisualizar.notas.map((notaAtual, indiceNota) => (
-                        <li key={indiceNota}>
+                      {normaVisualizar.notas.map((notaMapeada, indiceNotaMapeada) => (
+                        <li key={indiceNotaMapeada}>
                           <i className="fas fa-caret-right view-list-icon"></i>{" "}
-                          {notaAtual}
+                          {notaMapeada}
                         </li>
                       ))}
                     </ul>
@@ -1669,10 +1788,10 @@ export default function Biblioteca() {
                     </span>
                     <ul className="view-list">
                       {normaVisualizar.referencias.map(
-                        (referenciaAtual, indiceReferencia) => (
-                          <li key={indiceReferencia}>
+                        (referenciaMapeada, indiceReferenciaMapeada) => (
+                          <li key={indiceReferenciaMapeada}>
                             <i className="fas fa-caret-right view-list-icon"></i>{" "}
-                            {referenciaAtual}
+                            {referenciaMapeada}
                           </li>
                         ),
                       )}
@@ -1709,17 +1828,18 @@ export default function Biblioteca() {
                         normaVisualizar.imagens.length > 0 && (
                           <div className="attachment-image-grid">
                             {normaVisualizar.imagens.map(
-                              (urlImagem, indiceImagem) => (
+                              (urlImagemMapeada, indiceImagemMapeada) => (
                                 <div
-                                  key={indiceImagem}
+                                  key={indiceImagemMapeada}
                                   className="attachment-image-item"
-                                  onClick={() =>
-                                    setImagemAbertaIdx(indiceImagem)
-                                  }
+                                  onClick={() => {
+                                    setImagensAbertas(normaVisualizar.imagens!);
+                                    setImagemAbertaIdx(indiceImagemMapeada);
+                                  }}
                                 >
                                   <img
-                                    src={urlImagem}
-                                    alt={`Anexo ${indiceImagem + 1}`}
+                                    src={urlImagemMapeada}
+                                    alt={`Anexo ${indiceImagemMapeada + 1}`}
                                   />
                                   <div className="image-hover-overlay">
                                     <i className="fas fa-magnifying-glass-plus"></i>
@@ -1765,11 +1885,14 @@ export default function Biblioteca() {
             onClose={() => setPdfAberto(null)}
           />
         )}
-        {imagemAbertaIdx !== null && normaVisualizar?.imagens && (
+        {imagemAbertaIdx !== null && imagensAbertas && (
           <ImageLightbox
-            imagens={normaVisualizar.imagens}
+            imagens={imagensAbertas}
             indiceInicial={imagemAbertaIdx}
-            onClose={() => setImagemAbertaIdx(null)}
+            onClose={() => {
+              setImagemAbertaIdx(null);
+              setImagensAbertas(null);
+            }}
           />
         )}
       </main>

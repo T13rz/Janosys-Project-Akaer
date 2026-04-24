@@ -635,19 +635,6 @@ body {
   flex: 1;
 }
 
-.norma-card.theme-cat-peça {
-  border-left-color: #ea580c;
-}
-.norma-card.theme-cat-conjunto {
-  border-left-color: #0f766e;
-}
-.norma-card.theme-cat-instalação {
-  border-left-color: #7c3aed;
-}
-.norma-card.theme-cat-geral {
-  border-left-color: #dc2626;
-}
-
 .norma-card-main-icon {
   font-size: 1.5rem;
   width: 52px;
@@ -671,12 +658,10 @@ body {
   visibility: hidden;
   transition: all 0.2s ease-in-out;
 }
-.norma-card:hover .norma-card-actions,
-.norma-card.selecionado .norma-card-actions {
+.norma-card:hover .norma-card-actions {
   opacity: 1;
   visibility: visible;
 }
-
 .norma-info {
   flex: 1;
 }
@@ -790,22 +775,18 @@ body {
 }
 
 .theme-cat-peça {
-  background: #fff4ee;
   color: #ea580c;
   border-color: #fed7aa;
 }
 .theme-cat-conjunto {
-  background: #f0fdfa;
   color: #0f766e;
   border-color: #99f6e4;
 }
 .theme-cat-instalação {
-  background: #f5f3ff;
   color: #7c3aed;
   border-color: #ddd6fe;
 }
 .theme-cat-geral {
-  background: #ffe3e3;
   color: #dc2626;
   border-color: #fecaca;
 }
@@ -1418,6 +1399,19 @@ body {
   transform: scale(0.97);
 }
 
+.btn-warning {
+  background: #fffbeb;
+  color: #d97706;
+}
+.btn-warning:hover {
+  background: #fde68a;
+  color: #b45309;
+}
+
+.norma-card.clicavel {
+  cursor: pointer;
+}
+
 @media (max-width: 768px) {
   .page {
     padding: 20px 16px;
@@ -1461,7 +1455,6 @@ body {
   .norma-card {
     flex-direction: column;
     padding-right: 20px;
-    cursor: pointer;
     -webkit-tap-highlight-color: transparent;
   }
   .norma-card-body {
