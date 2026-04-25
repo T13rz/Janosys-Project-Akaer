@@ -1,4 +1,4 @@
-import logoAkaerSigna from '../../assets/AKAER.signa.texto.png';
+import logoAkaerSigna from '../../assets/JanoSys.signa.nome.png';
 
 function Logotipo() {
   return (
